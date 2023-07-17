@@ -1,10 +1,14 @@
 package com.colabear754.refreshtoken_example_java.swagger;
 
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,5 +30,16 @@ public class SwaggerConfig {
                         .title("스프링시큐리티 + JWT 예제")
                         .description("스프링시큐리티와 JWT를 이용한 사용자 인증 예제입니다.")
                         .version("1.0.0"));
+    }
+
+    @Bean
+    public OperationCustomizer globalHeader() {
+        return (operation, handlerMethod) -> {
+            operation.addParametersItem(new Parameter()
+                    .in(ParameterIn.HEADER.toString())
+                    .schema(new StringSchema().name("Refresh-Token"))
+                    .name("Refresh-Token"));
+            return operation;
+        };
     }
 }
