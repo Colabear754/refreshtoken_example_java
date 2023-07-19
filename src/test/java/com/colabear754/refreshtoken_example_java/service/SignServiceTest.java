@@ -6,6 +6,7 @@ import com.colabear754.refreshtoken_example_java.dto.sign_in.response.SignInResp
 import com.colabear754.refreshtoken_example_java.dto.sign_up.request.SignUpRequest;
 import com.colabear754.refreshtoken_example_java.dto.sign_up.response.SignUpResponse;
 import com.colabear754.refreshtoken_example_java.entity.Member;
+import com.colabear754.refreshtoken_example_java.repository.MemberRefreshTokenRepository;
 import com.colabear754.refreshtoken_example_java.repository.MemberRepository;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
@@ -21,19 +22,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SignServiceTest {
     private final SignService signService;
     private final MemberRepository memberRepository;
+    private final MemberRefreshTokenRepository memberRefreshTokenRepository;
     private final PasswordEncoder encoder;
 
     @Autowired
-    SignServiceTest(SignService signService, MemberRepository memberRepository, PasswordEncoder encoder) {
+    SignServiceTest(SignService signService, MemberRepository memberRepository, MemberRefreshTokenRepository memberRefreshTokenRepository, PasswordEncoder encoder) {
         this.signService = signService;
         this.memberRepository = memberRepository;
+        this.memberRefreshTokenRepository = memberRefreshTokenRepository;
         this.encoder = encoder;
     }
 
     @BeforeEach
     @AfterEach
     void clear() {
-        memberRepository.deleteAll();
+        memberRefreshTokenRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
     
     @Test
