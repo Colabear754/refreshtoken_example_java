@@ -17,26 +17,37 @@ import java.util.Date;
 @Service
 public class TokenProvider {
     private final String secretKey;
-    private final long expirationHours;
+    private final long expirationMinutes;
+    private final long refreshExpirationHours;
     private final String issuer;
 
     public TokenProvider(
             @Value("${secret-key}") String secretKey,
-            @Value("${expiration-hours}") long expirationHours,
-            @Value("${issuer}") String issuer
-    ) {
+            @Value("${expiration-minutes}") long expirationMinutes,
+            @Value("${refresh-expiration-hours}") long refreshExpirationHours,
+            @Value("${issuer}") String issuer) {
         this.secretKey = secretKey;
-        this.expirationHours = expirationHours;
+        this.expirationMinutes = expirationMinutes;
+        this.refreshExpirationHours = refreshExpirationHours;
         this.issuer = issuer;
     }
 
-    public String createToken(String userSpecification) {
+    public String createAccessToken(String userSpecification) {
         return Jwts.builder()
                 .signWith(new SecretKeySpec(secretKey.getBytes(), SignatureAlgorithm.HS512.getJcaName()))
                 .setSubject(userSpecification)
                 .setIssuer(issuer)
                 .setIssuedAt(Timestamp.valueOf(LocalDateTime.now()))
-                .setExpiration(Date.from(Instant.now().plus(expirationHours, ChronoUnit.HOURS)))
+                .setExpiration(Date.from(Instant.now().plus(expirationMinutes, ChronoUnit.SECONDS)))
+                .compact();
+    }
+
+    public String createRefreshToken() {
+        return Jwts.builder()
+                .signWith(new SecretKeySpec(secretKey.getBytes(), SignatureAlgorithm.HS512.getJcaName()))
+                .setIssuer(issuer)
+                .setIssuedAt(Timestamp.valueOf(LocalDateTime.now()))
+                .setExpiration(Date.from(Instant.now().plus(refreshExpirationHours, ChronoUnit.HOURS)))
                 .compact();
     }
 

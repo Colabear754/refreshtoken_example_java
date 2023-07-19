@@ -5,6 +5,8 @@ import com.colabear754.refreshtoken_example_java.dto.sign_in.response.SignInResp
 import com.colabear754.refreshtoken_example_java.dto.sign_up.request.SignUpRequest;
 import com.colabear754.refreshtoken_example_java.dto.sign_up.response.SignUpResponse;
 import com.colabear754.refreshtoken_example_java.entity.Member;
+import com.colabear754.refreshtoken_example_java.entity.MemberRefreshToken;
+import com.colabear754.refreshtoken_example_java.repository.MemberRefreshTokenRepository;
 import com.colabear754.refreshtoken_example_java.repository.MemberRepository;
 import com.colabear754.refreshtoken_example_java.security.TokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SignService {
     private final MemberRepository memberRepository;
+    private final MemberRefreshTokenRepository memberRefreshTokenRepository;
     private final TokenProvider tokenProvider;
     private final PasswordEncoder encoder;
 
@@ -31,12 +34,18 @@ public class SignService {
         return SignUpResponse.from(member);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public SignInResponse signIn(SignInRequest request) {
         Member member = memberRepository.findByAccount(request.account())
                 .filter(it -> encoder.matches(request.password(), it.getPassword()))
                 .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다."));
-        String token = tokenProvider.createToken(String.format("%s:%s", member.getId(), member.getType()));
-        return new SignInResponse(member.getName(), member.getType(), token);
+        String accessToken = tokenProvider.createAccessToken(String.format("%s:%s", member.getId(), member.getType()));
+        String refreshToken = tokenProvider.createRefreshToken();
+        memberRefreshTokenRepository.findById(member.getId())
+                .ifPresentOrElse(
+                        it -> it.updateRefreshToken(refreshToken),
+                        () -> memberRefreshTokenRepository.save(new MemberRefreshToken(member, refreshToken))
+                );
+        return new SignInResponse(member.getName(), member.getType(), accessToken, refreshToken);
     }
 }
