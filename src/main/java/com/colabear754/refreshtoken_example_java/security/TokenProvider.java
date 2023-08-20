@@ -53,7 +53,7 @@ public class TokenProvider {
                 .setSubject(userSpecification)
                 .setIssuer(issuer)
                 .setIssuedAt(Timestamp.valueOf(LocalDateTime.now()))
-                .setExpiration(Date.from(Instant.now().plus(expirationMinutes, ChronoUnit.SECONDS)))
+                .setExpiration(Date.from(Instant.now().plus(expirationMinutes, ChronoUnit.MINUTES)))
                 .compact();
     }
 
@@ -88,6 +88,7 @@ public class TokenProvider {
         validateAndParseToken(refreshToken);
         String memberId = decodeJwtPayloadSubject(oldAccessToken).split(":")[0];
         memberRefreshTokenRepository.findByMemberIdAndReissueCountLessThan(UUID.fromString(memberId), reissueLimit)
+                .filter(memberRefreshToken -> memberRefreshToken.validateRefreshToken(refreshToken))
                 .orElseThrow(() -> new ExpiredJwtException(null, null, "Refresh token expired."));
     }
 
